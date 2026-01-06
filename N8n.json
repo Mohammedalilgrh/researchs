@@ -16,25 +16,25 @@
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1,
-      "position": [250, 300]
+      "position": [
+        250,
+        300
+      ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM posted_videos WHERE posted = 0 ORDER BY created_at ASC LIMIT 1;",
+        "query": "SELECT * FROM posted_videos WHERE posted = false ORDER BY created_at ASC LIMIT 1;",
         "additionalFields": {}
       },
       "id": "get-old-video",
       "name": "Get Old Video from DB",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [450, 500],
-      "credentials": {
-        "postgres": {
-          "id": "YOUR_DB_CREDENTIALS_ID",
-          "name": "PostgreSQL DB"
-        }
-      }
+      "position": [
+        450,
+        500
+      ]
     },
     {
       "parameters": {
@@ -48,13 +48,10 @@
       "name": "Get Telegram Channel Videos",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1,
-      "position": [450, 300],
-      "credentials": {
-        "telegramApi": {
-          "id": "YOUR_TELEGRAM_BOT_ID",
-          "name": "Telegram Bot"
-        }
-      }
+      "position": [
+        450,
+        300
+      ]
     },
     {
       "parameters": {
@@ -81,7 +78,10 @@
       "name": "Check for New Videos",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [650, 300]
+      "position": [
+        650,
+        300
+      ]
     },
     {
       "parameters": {
@@ -93,13 +93,10 @@
       "name": "Check if Already Posted",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [850, 200],
-      "credentials": {
-        "postgres": {
-          "id": "YOUR_DB_CREDENTIALS_ID",
-          "name": "PostgreSQL DB"
-        }
-      }
+      "position": [
+        850,
+        200
+      ]
     },
     {
       "parameters": {
@@ -127,7 +124,10 @@
       "name": "Filter Not Posted Videos",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [1050, 200]
+      "position": [
+        1050,
+        200
+      ]
     },
     {
       "parameters": {
@@ -136,20 +136,16 @@
         "mediaUrl": "={{$json.video}}",
         "caption": "={{$json.caption}}",
         "share": true,
-        "locationId": "",
         "additionalFields": {}
       },
       "id": "instagram-node",
       "name": "Post to Instagram Reels",
       "type": "n8n-nodes-base.instagram",
       "typeVersion": 1,
-      "position": [1250, 300],
-      "credentials": {
-        "instagramGraphApi": {
-          "id": "YOUR_INSTAGRAM_CREDENTIALS_ID",
-          "name": "Instagram Account"
-        }
-      }
+      "position": [
+        1250,
+        300
+      ]
     },
     {
       "parameters": {
@@ -161,23 +157,23 @@
       "name": "Mark Video as Posted",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [1450, 300],
-      "credentials": {
-        "postgres": {
-          "id": "YOUR_DB_CREDENTIALS_ID",
-          "name": "PostgreSQL DB"
-        }
-      }
+      "position": [
+        1450,
+        300
+      ]
     },
     {
       "parameters": {
-        "functionCode": "// Add small delay between posts\nconst delay = ms => new Promise(resolve => setTimeout(resolve, ms));\nawait delay(5000);\n\nreturn items;"
+        "jsCode": "// Add small delay between posts\nconst delay = ms => new Promise(resolve => setTimeout(resolve, ms));\nawait delay(5000);\n\nreturn items;"
       },
       "id": "delay-node",
       "name": "Add Delay (5 seconds)",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [1650, 300]
+      "position": [
+        1650,
+        300
+      ]
     },
     {
       "parameters": {
@@ -195,7 +191,10 @@
       "name": "Set Variables",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
-      "position": [250, 150]
+      "position": [
+        250,
+        150
+      ]
     }
   ],
   "connections": {
@@ -319,6 +318,7 @@
     "executionOrder": "v1"
   },
   "staticData": null,
-  "updatedAt": "2026-01-07T02:21:00.000Z",
+  "updatedAt": "2026-01-07T02:26:00.000Z",
   "versionId": "1"
 }
+
