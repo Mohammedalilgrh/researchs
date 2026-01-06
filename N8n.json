@@ -1,0 +1,324 @@
+{
+  "name": "Telegram to Instagram Auto-Poster",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "value": 4
+            }
+          ]
+        }
+      },
+      "id": "scheduler",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM posted_videos WHERE posted = 0 ORDER BY created_at ASC LIMIT 1;",
+        "additionalFields": {}
+      },
+      "id": "get-old-video",
+      "name": "Get Old Video from DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [450, 500],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_DB_CREDENTIALS_ID",
+          "name": "PostgreSQL DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "resource": "channelContent",
+        "channelId": "={{$vars.telegramChannelId}}",
+        "limit": 5,
+        "additionalFields": {}
+      },
+      "id": "telegram-node",
+      "name": "Get Telegram Channel Videos",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_BOT_ID",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-video-exists",
+              "leftValue": "={{$json.video}}",
+              "operator": {
+                "type": "exists",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "filter-new-videos",
+      "name": "Check for New Videos",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT video_id FROM posted_videos WHERE video_id = '{{$json.video_id}}';",
+        "additionalFields": {}
+      },
+      "id": "check-if-posted",
+      "name": "Check if Already Posted",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [850, 200],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_DB_CREDENTIALS_ID",
+          "name": "PostgreSQL DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-if-exists",
+              "leftValue": "={{$json.rowCount}}",
+              "operator": {
+                "type": "number",
+                "operation": "equal",
+                "rightValue": 0
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "filter-not-posted",
+      "name": "Filter Not Posted Videos",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "mediaType": "REELS",
+        "mediaUrl": "={{$json.video}}",
+        "caption": "={{$json.caption}}",
+        "share": true,
+        "locationId": "",
+        "additionalFields": {}
+      },
+      "id": "instagram-node",
+      "name": "Post to Instagram Reels",
+      "type": "n8n-nodes-base.instagram",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "credentials": {
+        "instagramGraphApi": {
+          "id": "YOUR_INSTAGRAM_CREDENTIALS_ID",
+          "name": "Instagram Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO posted_videos (video_id, caption, posted, created_at) VALUES ('{{$json.video_id}}', '{{$json.caption}}', true, NOW()) ON CONFLICT (video_id) DO UPDATE SET posted = true, posted_at = NOW();",
+        "additionalFields": {}
+      },
+      "id": "mark-as-posted",
+      "name": "Mark Video as Posted",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1450, 300],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_DB_CREDENTIALS_ID",
+          "name": "PostgreSQL DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Add small delay between posts\nconst delay = ms => new Promise(resolve => setTimeout(resolve, ms));\nawait delay(5000);\n\nreturn items;"
+      },
+      "id": "delay-node",
+      "name": "Add Delay (5 seconds)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "telegramChannelId",
+              "value": "YOUR_TELEGRAM_CHANNEL_ID"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-vars",
+      "name": "Set Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [250, 150]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Variables": {
+      "main": [
+        [
+          {
+            "node": "Get Telegram Channel Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Telegram Channel Videos": {
+      "main": [
+        [
+          {
+            "node": "Check for New Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for New Videos": {
+      "main": [
+        [
+          {
+            "node": "Check if Already Posted",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Old Video from DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Already Posted": {
+      "main": [
+        [
+          {
+            "node": "Filter Not Posted Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Not Posted Videos": {
+      "main": [
+        [
+          {
+            "node": "Post to Instagram Reels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Old Video from DB": {
+      "main": [
+        [
+          {
+            "node": "Post to Instagram Reels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Instagram Reels": {
+      "main": [
+        [
+          {
+            "node": "Mark Video as Posted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Video as Posted": {
+      "main": [
+        [
+          {
+            "node": "Add Delay (5 seconds)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "variables": [
+    {
+      "id": "telegramChannelId",
+      "key": "telegramChannelId",
+      "value": "YOUR_TELEGRAM_CHANNEL_ID",
+      "type": "string"
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "updatedAt": "2026-01-07T02:21:00.000Z",
+  "versionId": "1"
+}
